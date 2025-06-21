@@ -3,6 +3,7 @@ export type Kursant = {
   fio: string;
   iin: string;
   phone: string;
+  category: string;
   payment: number;
   bookBought: boolean;
   bookGiven: "yes" | "no" | null;

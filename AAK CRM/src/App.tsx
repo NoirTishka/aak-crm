@@ -2,14 +2,18 @@ import './App.css'
 import { useEffect, useState } from 'react';
 import type { Kursant } from './types/kursant';
 import { AddKursantForm } from './components/AddKursantForm';
+import ConfirmModal from "./components/ConfirmModal";
 
 export default function App() {
   const [selected, setSelected] = useState<Kursant | null>(null);
   const [kursants, setKursants] = useState<Kursant[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const noDrag = {['-webkit-app-region']: 'no-drag'} as React.CSSProperties;
   const drag = {['-webkit-app-region']: 'drag'} as React.CSSProperties;
-  
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+
   useEffect(() => {
     loadKursants();
   }, []);
@@ -17,6 +21,7 @@ export default function App() {
   async function loadKursants() {
     const list = await window.api.getAllKursants();
     setKursants(list);
+    return list;
   }
 
   return (
@@ -79,9 +84,27 @@ export default function App() {
                 <h2 className="text-xl font-bold mb-4">Добавить курсанта</h2>
                 <AddKursantForm
                   onClose={() => setShowModal(false)}
-                  onAdded={() => {
+                  onAdded={async () => {
                     setShowModal(false);
-                    loadKursants();
+                    await loadKursants();
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {editModalOpen && selected && (
+            <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                <h2 className="text-xl font-bold mb-4">Редактировать курсанта</h2>
+                <AddKursantForm
+                  initialData={selected}
+                  editMode={true}
+                  onClose={() => setEditModalOpen(false)}
+                  onUpdated={async () => {
+                    setEditModalOpen(false);
+                    const all = await loadKursants();
+                    const updated = all.find(k => k.id === selected.id);
+                    if (updated) setSelected(updated);
                   }}
                 />
               </div>
@@ -116,9 +139,11 @@ export default function App() {
             </div>
           ) : (
             <div className="space-y-4 pr-10">
+  
               <h2>{selected.fio}</h2>
               <div className="text-sm text-gray-600">ИИН: {selected.iin}</div>
               <div className="text-sm text-gray-600">Телефон: {selected.phone}</div>
+              <div className="text-sm text-gray-600">Категория: {selected.category}</div>
               <div className="text-sm text-gray-600">Записан: {selected.registered_at}</div>
               <div className="text-sm text-gray-600">Старт в Avtomektep: {selected.avtomektep_start}</div>
               <div className="pt-4 border-t">
@@ -134,9 +159,40 @@ export default function App() {
                 <div className="text-sm">
                   {selected.practice.taken ? `${selected.practice.count} занятий` : 'Не берёт'}
                 </div>
+                <div className="flex justify-end">
+                <button
+                  onClick={() => setEditModalOpen(true)}
+                  className="text-sm px-4 py-2 !bg-blue-500 hover:!bg-blue-600 text-white rounded"
+                >
+                  ✏️ Редактировать
+                </button>
+
+                <button
+                  onClick={() => setConfirmDeleteOpen(true)}
+                  className="!bg-red-500 hover:!bg-red-600 text-white px-4 py-2 rounded"
+                >
+                  🗑 Удалить
+                </button>
+
+                {confirmDeleteOpen && selected && (
+                  <ConfirmModal
+                    message={`Вы уверены, что хотите удалить курсанта ${selected.fio}?`}
+                    onConfirm={async () => {
+                      await window.api.deleteKursant(selected.id);
+                      setSelected(null);
+                      loadKursants();
+                      setConfirmDeleteOpen(false);
+                    }}
+                    onCancel={() => setConfirmDeleteOpen(false)}
+                  />
+                )}
+
               </div>
             </div>
+          </div>
           )}
+          
+          
         </div>
       </div>
     </div>

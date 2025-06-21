@@ -4,6 +4,9 @@ declare global {
   interface Window {
     api: {
       getAllKursants: () => Promise<any[]>;
+      updateKursant: (kursant: Kursant) => Promise<void>;
+      deleteKursant: (d) => Promise<void>;
+
       addKursant: (data: {
         fio: string;
         iin: string;

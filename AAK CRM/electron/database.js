@@ -18,6 +18,7 @@ if (version === 0) {
       fio TEXT NOT NULL,
       iin TEXT NOT NULL,
       phone TEXT NOT NULL,
+      category TEXT NOT NULL,
       registered_at TEXT NOT NULL,
       avtomektep_start TEXT NOT NULL,
       payment INTEGER NOT NULL,
@@ -36,17 +37,18 @@ if (version === 0) {
 function addKursant(data) {
   const stmt = db.prepare(`
     INSERT INTO kursant (
-      fio, iin, phone, registered_at, avtomektep_start,
-      payment, bookBought, bookGiven,
-      video, tests, autodrome,
-      practiceTaken, practiceCount
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    fio, iin, phone, category, registered_at, avtomektep_start,
+    payment, bookBought, bookGiven,
+    video, tests, autodrome,
+    practiceTaken, practiceCount
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
     data.fio,
     data.iin,
     data.phone,
+    data.category,
     data.registered_at,
     data.avtomektep_start,
     data.payment,
@@ -56,7 +58,7 @@ function addKursant(data) {
     data.materials.tests ? 1 : 0,
     data.materials.autodrome ? 1 : 0,
     data.practice.taken ? 1 : 0,
-    data.practice.taken ? data.practice.count : 0
+    data.practice.count
   );
 }
 
@@ -72,6 +74,7 @@ function getAllKursants() {
           autodrome,
           practiceTaken,
           practiceCount,
+          сategory,
           ...rest
         } = row;
 
@@ -96,5 +99,44 @@ function getAllKursants() {
   });
 }
 
+function updateKursant(data) {
+  const stmt = db.prepare(`
+    UPDATE kursant SET
+      fio = ?,
+      iin = ?,
+      phone = ?,
+      category = ?,
+      payment = ?,
+      bookBought = ?,
+      bookGiven = ?,
+      video = ?,
+      tests = ?,
+      autodrome = ?,
+      practiceTaken = ?,
+      practiceCount = ?
+    WHERE id = ?
+  `);
+    stmt.run(
+    data.fio,
+    data.iin,
+    data.phone,
+    data.category,
+    data.payment,
+    data.bookBought ? 1 : 0,
+    data.bookGiven,
+    data.materials.video ? 1 : 0,
+    data.materials.tests ? 1 : 0,
+    data.materials.autodrome ? 1 : 0,
+    data.practice.taken ? 1 : 0,
+    data.practice.count,
+    data.id
+  );
+}
 
-export { getAllKursants, addKursant };
+function deleteKursant(id) {
+  const stmt = db.prepare(`DELETE FROM kursant WHERE id = ?`);
+  stmt.run(id);
+}
+
+
+export { getAllKursants, addKursant, updateKursant, deleteKursant};
