@@ -1,3 +1,5 @@
+import type { Kursant } from "./kursant";
+
 export {};
 
 declare global {
@@ -6,6 +8,7 @@ declare global {
       getAllKursants: () => Promise<any[]>;
       updateKursant: (kursant: Kursant) => Promise<void>;
       deleteKursant: (d) => Promise<void>;
+      searchKursants: (query: string) => Promise<Kursant[]>;
 
       addKursant: (data: {
         fio: string;

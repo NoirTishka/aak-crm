@@ -59,105 +59,132 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
           onAdded?.();
         }
   };
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <button type="button" onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">
+  return (   
+    <form
+      onSubmit={handleSubmit}
+      className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-xl space-y-5"
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl"
+      >
         ✕
       </button>
+      
+      <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">
+        {editMode ? 'Редактировать курсанта' : 'Добавить курсанта'}
+      </h2>
 
-      <input
-        ref={fioRef}
-        value={fio}
-        onChange={e => setFio(e.target.value)}
-        onKeyDown={e => { if (e.key === "ArrowDown") iinRef.current?.focus(); }}
-        placeholder="ФИО"
-        className="border p-1 w-full"
-      />
 
-      <input
-        ref={iinRef}
-        value={iin}
-        onChange={e => setIin(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === "ArrowDown") phoneRef.current?.focus();
-          if (e.key === "ArrowUp") fioRef.current?.focus();
-        }}
-        placeholder="ИИН"
-        className="border p-1 w-full"
-      />
-
-      <input
-        ref={phoneRef}
-        value={phone}
-        onChange={e => setPhone(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === "ArrowDown") paymentRef.current?.focus();
-          if (e.key === "ArrowUp") iinRef.current?.focus();
-        }}
-        placeholder="Телефон"
-        className="border p-1 w-full"
-      />
-
-      <label className="block mb-2 text-sm font-medium text-gray-700">Категория</label>
-      <select
-        value={category}
-        onChange={e => setCategory(e.target.value)}
-        className="w-full border border-gray-300 rounded p-2 mb-4 text-sm"
-      >
-        <option value="">Выберите категорию</option>
-        {['B', 'A', 'A1', 'C1', 'C', 'D1', 'D', 'BE', 'C1E', 'CE', 'D1E', 'DE'].map(cat => (
-          <option key={cat} value={cat}>{cat}</option>
-        ))}
-      </select>
-
-      <input
-        ref={paymentRef}
-        value={payment}
-        onChange={e => setPayment(Number(e.target.value))}
-        placeholder="Сумма оплаты"
-        type="number"
-        className="border p-1 w-full"
-      />
-
-      <label className="block">
-        <input type="checkbox" checked={bookBought} onChange={e => setBookBought(e.target.checked)} /> Купил книгу?
-      </label>
-
-      {bookBought && (
-        <div className="text-sm space-x-2">
-          <label><input type="radio" name="bookGiven" value="yes" checked={bookGiven === "yes"} onChange={() => setBookGiven("yes")} /> Выдана</label>
-          <label><input type="radio" name="bookGiven" value="no" checked={bookGiven === "no"} onChange={() => setBookGiven("no")} /> Не выдана</label>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">ФИО</label>
+          <input
+            ref={fioRef}
+            value={fio}
+            onChange={e => setFio(e.target.value)}
+            placeholder="ФИО"
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
         </div>
-      )}
 
-      <fieldset className="text-sm">
-        <legend className="font-semibold">Материалы</legend>
-        <label><input type="checkbox" checked={video} onChange={e => setVideo(e.target.checked)} /> Видеоуроки</label><br />
-        <label><input type="checkbox" checked={tests} onChange={e => setTests(e.target.checked)} /> Тесты</label><br />
-        <label><input type="checkbox" checked={autodrome} onChange={e => setAutodrome(e.target.checked)} /> Автодром</label>
-      </fieldset>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">ИИН</label>
+          <input
+            ref={iinRef}
+            value={iin}
+            onChange={e => setIin(e.target.value)}
+            placeholder="ИИН"
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
 
-      <label className="block">
-        <input type="checkbox" checked={practiceTaken} onChange={e => setPracticeTaken(e.target.checked)} /> Берёт практику?
-      </label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Телефон</label>
+          <input
+            ref={phoneRef}
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="Телефон"
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
 
-      {practiceTaken && (
-        <input
-          type="number"
-          inputMode="numeric"
-          value={practiceCount}
-          onChange={e => setPracticeCount(e.target.value)}
-          placeholder="Кол-во занятий"
-          className="border p-1 w-full"
-        />
-      )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Категория</label>
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="">Выберите категорию</option>
+            {['B', 'A', 'A1', 'C1', 'C', 'D1', 'D', 'BE', 'C1E', 'CE', 'D1E', 'DE'].map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="flex justify-end mt-auto">
-        <button type="submit" className="!bg-blue-600 !text-white px-4 py-2 rounded hover:!bg-blue-700">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Сумма оплаты</label>
+          <input
+            ref={paymentRef}
+            value={payment}
+            onChange={e => setPayment(Number(e.target.value))}
+            type="number"
+            placeholder="Сумма"
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+
+        <label className="inline-flex items-center gap-2">
+          <input type="checkbox" checked={bookBought} onChange={e => setBookBought(e.target.checked)} />
+          Купил книгу?
+        </label>
+
+        {bookBought && (
+          <div className="flex gap-6 text-sm">
+            <label><input type="radio" name="bookGiven" value="yes" checked={bookGiven === "yes"} onChange={() => setBookGiven("yes")} /> Выдана</label>
+            <label><input type="radio" name="bookGiven" value="no" checked={bookGiven === "no"} onChange={() => setBookGiven("no")} /> Не выдана</label>
+          </div>
+        )}
+
+        <fieldset className="space-y-2">
+          <legend className="font-medium text-gray-700">Материалы</legend>
+          <div className="flex flex-wrap gap-4">
+            <label><input type="checkbox" checked={video} onChange={e => setVideo(e.target.checked)} /> Видеоуроки</label>
+            <label><input type="checkbox" checked={tests} onChange={e => setTests(e.target.checked)} /> Тесты</label>
+            <label><input type="checkbox" checked={autodrome} onChange={e => setAutodrome(e.target.checked)} /> Автодром</label>
+          </div>
+        </fieldset>
+
+        <label className="inline-flex items-center gap-2">
+          <input type="checkbox" checked={practiceTaken} onChange={e => setPracticeTaken(e.target.checked)} />
+          Берёт практику?
+        </label>
+
+        {practiceTaken && (
+          <input
+            type="number"
+            inputMode="numeric"
+            value={practiceCount}
+            onChange={e => setPracticeCount(e.target.value)}
+            placeholder="Кол-во занятий"
+            className="w-full rounded border px-4 py-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        )}
+      </div>
+
+      <div className="flex justify-end pt-4">
+        <button
+          type="submit"
+          className="!bg-blue-600 hover:!bg-blue-700 text-white px-6 py-2 rounded-md transition"
+        >
           {editMode ? 'Редактировать' : 'Добавить'}
         </button>
       </div>
     </form>
+
   );
   };
 

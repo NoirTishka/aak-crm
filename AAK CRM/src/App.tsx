@@ -1,6 +1,7 @@
 import './App.css'
 import { useEffect, useState } from 'react';
 import type { Kursant } from './types/kursant';
+import type { ChangeEvent } from 'react';
 import { AddKursantForm } from './components/AddKursantForm';
 import ConfirmModal from "./components/ConfirmModal";
 
@@ -12,6 +13,15 @@ export default function App() {
   const noDrag = {['-webkit-app-region']: 'no-drag'} as React.CSSProperties;
   const drag = {['-webkit-app-region']: 'drag'} as React.CSSProperties;
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Kursant[]>([]);
+
+
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    window.api.searchKursants(value);
+  };
 
 
   useEffect(() => {
@@ -62,9 +72,38 @@ export default function App() {
           <h1 className="text-xl font-bold mb-4">АAK CRM</h1>
 
           <input
+            type="text"
             placeholder="Поиск по ИИН, ФИО или телефону"
-            className="mb-4 p-2 rounded border text-sm"
+            value={searchTerm}
+            onChange={handleSearch}
+            className="border rounded px-2 py-1 w-full"
           />
+
+          {searchTerm && (
+            <div className="w-full mt-1 bg-white border rounded shadow max-h-60 overflow-y-auto z-10">
+              {searchResults.length > 0 ? (
+                searchResults.map(k => (
+                  <div
+                    key={k.id}
+                    onClick={() => {
+                      setSelected(k);
+                      setSearchTerm('');
+                      setSearchResults([]);
+                    }}
+                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <div className="font-semibold">{k.fio}</div>
+                    <div className="text-sm text-gray-500">{k.iin} — {k.phone}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-2 text-gray-500">Совпадений не найдено</div>
+              )}
+            </div>
+          )}
+
+
+
 
           <div className="flex space-x-2 mb-4 text-sm">
             <button className="text-blue-600 font-semibold">Активные</button>
@@ -80,8 +119,6 @@ export default function App() {
 
           {showModal && (
             <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                <h2 className="text-xl font-bold mb-4">Добавить курсанта</h2>
                 <AddKursantForm
                   onClose={() => setShowModal(false)}
                   onAdded={async () => {
@@ -89,13 +126,10 @@ export default function App() {
                     await loadKursants();
                   }}
                 />
-              </div>
             </div>
           )}
           {editModalOpen && selected && (
             <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                <h2 className="text-xl font-bold mb-4">Редактировать курсанта</h2>
                 <AddKursantForm
                   initialData={selected}
                   editMode={true}
@@ -107,8 +141,7 @@ export default function App() {
                     if (updated) setSelected(updated);
                   }}
                 />
-              </div>
-            </div>
+          </div>
           )}
 
           <div className="overflow-auto flex-grow space-y-3">
@@ -131,7 +164,7 @@ export default function App() {
         </div>
 
         {/* Правая панель */}
-        <div className="basis-2/3 p-8 bg-gray-50 overflow-auto">
+        <div className="basis-2/3 p-8 bg-green-100 overflow-auto">
           {!selected ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
               <div className="text-3xl mb-2">Выберите курсанта</div>

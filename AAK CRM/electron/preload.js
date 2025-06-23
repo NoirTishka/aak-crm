@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   addKursant: (data) => ipcRenderer.invoke('kursant:add', data),
   updateKursant: (data) => ipcRenderer.invoke('kursant:update', data),
   deleteKursant: (id) => ipcRenderer.invoke('kursant:delete', id),
+  searchKursants: (query) => ipcRenderer.invoke('kursant:search', query),
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
   close: () => ipcRenderer.send('window:close'),

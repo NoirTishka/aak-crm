@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain} from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getAllKursants, addKursant, updateKursant, deleteKursant } from './database.js';
+import { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants } from './database.js';
 
 let mainWindow
 const __filename = fileURLToPath(import.meta.url);
@@ -45,6 +45,11 @@ function createWindow() {
   ipcMain.handle('kursant:delete', async (_event, id) => {
     return await deleteKursant(id);
   });
+
+  ipcMain.handle('kursant:search', async (_event, query) => {
+    return await searchKursants(query);
+  });
+
 
 
   ipcMain.on('window:minimize', () => {

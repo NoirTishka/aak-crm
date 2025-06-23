@@ -138,5 +138,30 @@ function deleteKursant(id) {
   stmt.run(id);
 }
 
+function searchKursants(query) {
+  const stmt = db.prepare(`
+    SELECT * FROM kursant
+    WHERE fio LIKE ? OR iin LIKE ? OR phone LIKE ?
+  `);
 
-export { getAllKursants, addKursant, updateKursant, deleteKursant};
+  const wildcard = `%${query}%`;
+  const rows = stmt.all(wildcard, wildcard, wildcard);
+
+  return rows.map(row => ({
+    ...row,
+    bookBought: Boolean(row.bookBought),
+    materials: {
+      video: Boolean(row.video),
+      tests: Boolean(row.tests),
+      autodrome: Boolean(row.autodrome),
+    },
+    practice: {
+      taken: Boolean(row.practiceTaken),
+      count: Number(row.practiceCount),
+    }
+  }));
+}
+
+
+
+export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants};
