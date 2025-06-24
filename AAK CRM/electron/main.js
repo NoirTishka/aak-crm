@@ -38,7 +38,7 @@ function createWindow() {
     return await addKursant(data);
   });
 
-  ipcMain.handle('kursant:update', async (event, data) => {
+  ipcMain.handle('kursant:update', async (_event, data) => {
     return await updateKursant(data);
   });
 
