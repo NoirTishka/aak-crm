@@ -1,4 +1,4 @@
-import type { Kursant } from "./kursant";
+import type { Kursant, KursantInput } from "./kursant";
 
 export {};
 
@@ -7,26 +7,9 @@ declare global {
     api: {
       getAllKursants: () => Promise<any[]>;
       updateKursant: (kursant: Kursant) => Promise<void>;
-      deleteKursant: (d) => Promise<void>;
+      deleteKursant: (id: number) => Promise<void>;
       searchKursants: (query: string) => Promise<Kursant[]>;
-
-      addKursant: (data: {
-        fio: string;
-        iin: string;
-        phone: string;
-        payment: number;
-        bookBought: boolean;
-        bookGiven: 'yes' | 'no' | null;
-        materials: {
-          video: boolean;
-          tests: boolean;
-          autodrome: boolean;
-        };
-        practice: {
-          taken: boolean;
-          count: number;
-        };
-      }) => Promise<void>;
+      addKursant: (data: KursantInput) => Promise<void>;
       minimize: () => void;
       maximize: () => void;
       close: () => void;

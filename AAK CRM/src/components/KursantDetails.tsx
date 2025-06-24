@@ -1,18 +1,18 @@
 import ConfirmModal from "./ConfirmModal";
 import { useState } from "react";
-import type { Kursant } from '../types/kursant';
+import { useKursantContext } from '../context/KursantContext';
 
 export function KursantDetails() {
-    const [selected, setSelected] = useState<Kursant | null>(null);
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);    
-    const today = new Date().toLocaleDateString('ru-RU');
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [kursants, setKursants] = useState<Kursant[]>([]);
-    async function loadKursants() {
-        const list = await window.api.getAllKursants();
-        setKursants(list);
-        return list;
-    }
+   const {
+    selected,
+    setSelected,
+    loadKursants,
+  } = useKursantContext();
+
+  const today = new Date().toLocaleDateString('ru-RU');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
 return (    
     <div className="basis-2/3 h-screen p-8 bg-green-50 overflow-hidden">
         {!selected ? (
