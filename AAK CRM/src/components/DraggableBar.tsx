@@ -1,6 +1,6 @@
 export function DraggableBar() {
-    const noDrag = {['-webkit-app-region']: 'no-drag'} as React.CSSProperties;
-    const drag = {['-webkit-app-region']: 'drag'} as React.CSSProperties;
+    const drag = { WebkitAppRegion: 'drag' } as React.CSSProperties;
+    const noDrag = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
     
     return (
         <div

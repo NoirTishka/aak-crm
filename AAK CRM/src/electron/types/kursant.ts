@@ -16,6 +16,13 @@ export type Kursant = {
     taken: boolean;
     count: number;
   };
+  filePaths?: {
+    idCard?: string;
+    payment?: string;
+  };
   registered_at: string;
   avtomektep_start: string;
 };
+
+
+export type KursantInput = Omit<Kursant, 'id' | 'registered_at'>;

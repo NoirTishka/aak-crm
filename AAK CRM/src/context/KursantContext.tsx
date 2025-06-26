@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import type { Kursant } from "../types/kursant";
+import type { Kursant } from "../electron/types/kursant";
 
 type KursantContextType = {
   selected: Kursant | null;
@@ -7,6 +7,8 @@ type KursantContextType = {
  loadKursants: () => Promise<Kursant[]>;
   kursants: Kursant[];
   setKursants: (kursants: Kursant[]) => void;
+  selectedFilePath: string | null;
+  setSelectedFilePath: (path: string | null) => void;
 };
 
 const KursantContext = createContext<KursantContextType | undefined>(undefined);
@@ -14,6 +16,8 @@ const KursantContext = createContext<KursantContextType | undefined>(undefined);
 export function KursantProvider({ children }: { children: React.ReactNode }) {
   const [selected, setSelected] = useState<Kursant | null>(null);
   const [kursants, setKursants] = useState<Kursant[]>([]);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+
 
   const loadKursants = async () => {
     const list = await window.api.getAllKursants();
@@ -23,7 +27,7 @@ export function KursantProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <KursantContext.Provider
-      value={{ selected, setSelected, kursants, setKursants, loadKursants}}
+      value={{ selected, setSelected, kursants, setKursants, loadKursants, selectedFilePath, setSelectedFilePath }}
     >
       {children}
     </KursantContext.Provider>

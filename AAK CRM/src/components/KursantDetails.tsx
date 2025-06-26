@@ -1,6 +1,9 @@
 import ConfirmModal from "./ConfirmModal";
 import { useState } from "react";
 import { useKursantContext } from '../context/KursantContext';
+import AddKursantForm from "./AddKursantForm";
+import { FileViewer } from "./FileViewer";
+
 
 export function KursantDetails() {
    const {
@@ -9,6 +12,13 @@ export function KursantDetails() {
     loadKursants,
   } = useKursantContext();
 
+  const reversedFilePaths = 
+  selected?.filePaths
+    ? Object.entries(selected.filePaths).reduce((acc, [path, key]) => {
+        if (key) acc[key] = path;
+        return acc;
+      }, {} as Record<string, string>)
+    : {};
   const today = new Date().toLocaleDateString('ru-RU');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -66,11 +76,28 @@ return (
                 </button>
             </div>
 
+            {editModalOpen && selected && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50">
+                    <AddKursantForm
+                    initialData={selected}
+                    editMode={true}
+                    onClose={() => setEditModalOpen(false)}
+                    onUpdated={async () => {
+                        setEditModalOpen(false);
+                        const all = await loadKursants();
+                        const updated = all.find(k => k.id === selected.id);
+                        if (updated) setSelected(updated);
+                    }}
+                    />
+                </div>
+                )}
+
             {/* Модальное окно подтверждения удаления */}
             {confirmDeleteOpen && (
                 <ConfirmModal
                 message={`Вы уверены, что хотите удалить курсанта ${selected.fio}?`}
                 onConfirm={async () => {
+                    if (!selected?.id) return;
                     await window.api.deleteKursant(selected.id);
                     setSelected(null);
                     loadKursants();
@@ -79,8 +106,11 @@ return (
                 onCancel={() => setConfirmDeleteOpen(false)}
                 />
             )}
+        
             </div>
         )}
+        {selected?.filePaths && <FileViewer filePaths={reversedFilePaths} />}
+    
     </div>
 );
 }

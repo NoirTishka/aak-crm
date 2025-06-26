@@ -9,7 +9,11 @@ declare global {
       updateKursant: (kursant: Kursant) => Promise<void>;
       deleteKursant: (id: number) => Promise<void>;
       searchKursants: (query: string) => Promise<Kursant[]>;
-      addKursant: (data: KursantInput) => Promise<void>;
+      addKursant: (kursant: Kursant) => Promise<number>;
+      saveFileDialog: (kursantId: number) => Promise<string>;
+      saveKursantFile: (kursantId: number, key: string) => Promise<string | undefined>;
+      pickLocalFile: () => Promise<File | null>;
+      readFile: (path: string) => Promise<Uint8Array>;
       minimize: () => void;
       maximize: () => void;
       close: () => void;

@@ -1,15 +1,16 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 import Database from 'better-sqlite3';
+import type { Kursant } from './types/kursant';
+import { dialog } from 'electron';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dbPath = path.join(__dirname, '..', 'aakcrm.db');
+const dbPath = path.join(process.cwd(), 'aakcrm.db');
 const db = new Database(dbPath);
+migrate();
 
-// Версия БД
-const version = db.pragma('user_version', { simple: true });
+function migrate() {
+
+let version = db.pragma('user_version', { simple: true });
 
 if (version === 0) {
   db.exec(`
@@ -30,21 +31,29 @@ if (version === 0) {
       practiceTaken INTEGER NOT NULL,
       practiceCount INTEGER NOT NULL
     );
-    PRAGMA user_version = 1;
   `);
+  db.pragma('user_version = 1');
+  version = 1;
 }
 
-function addKursant(data) {
+  if (version === 1) {
+      db.exec(`ALTER TABLE kursant ADD COLUMN filePath TEXT;`);
+      db.pragma('user_version = 2');
+      version = 2;
+    }
+  }
+
+function addKursant(data: Kursant): number {
   const stmt = db.prepare(`
     INSERT INTO kursant (
-    fio, iin, phone, category, registered_at, avtomektep_start,
-    payment, bookBought, bookGiven,
-    video, tests, autodrome,
-    practiceTaken, practiceCount
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fio, iin, phone, category, registered_at, avtomektep_start,
+      payment, bookBought, bookGiven,
+      video, tests, autodrome,
+      practiceTaken, practiceCount
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  stmt.run(
+  const result = stmt.run(
     data.fio,
     data.iin,
     data.phone,
@@ -60,21 +69,24 @@ function addKursant(data) {
     data.practice.taken ? 1 : 0,
     data.practice.count
   );
+  
+  return Number(result.lastInsertRowid);
 }
 
-function getAllKursants() {
+
+function getAllKursants(): Promise<Kursant[]> {
   return new Promise((resolve, reject) => {
     try {
       const rows = db.prepare('SELECT * FROM kursant').all();
 
-      const normalized = rows.map(row => {
+      const normalized = rows.map((row: any) => {
         const {
           video,
           tests,
           autodrome,
           practiceTaken,
           practiceCount,
-          сategory,
+          filePath,
           ...rest
         } = row;
 
@@ -84,14 +96,16 @@ function getAllKursants() {
           materials: {
             video: Boolean(video),
             tests: Boolean(tests),
-            autodrome: Boolean(autodrome)
+            autodrome: Boolean(autodrome),
           },
           practice: {
             taken: Boolean(practiceTaken),
-            count: Number(practiceCount)
-          }
-        };
+            count: Number(practiceCount),
+          },
+          filePaths: filePath ? JSON.parse(filePath) : {},
+        } as Kursant;
       });
+
       resolve(normalized);
     } catch (e) {
       reject(e);
@@ -99,7 +113,7 @@ function getAllKursants() {
   });
 }
 
-function updateKursant(data) {
+function updateKursant(data: Kursant): void {
   const stmt = db.prepare(`
     UPDATE kursant SET
       fio = ?,
@@ -113,10 +127,12 @@ function updateKursant(data) {
       tests = ?,
       autodrome = ?,
       practiceTaken = ?,
-      practiceCount = ?
+      practiceCount = ?,
+      filePath = ?
     WHERE id = ?
   `);
-    stmt.run(
+
+  stmt.run(
     data.fio,
     data.iin,
     data.phone,
@@ -129,16 +145,18 @@ function updateKursant(data) {
     data.materials.autodrome ? 1 : 0,
     data.practice.taken ? 1 : 0,
     data.practice.count,
+    JSON.stringify(data.filePaths ?? {}),
     data.id
   );
 }
 
-function deleteKursant(id) {
-  const stmt = db.prepare(`DELETE FROM kursant WHERE id = ?`);
+
+function deleteKursant(id: number): void {
+  const stmt = db.prepare('DELETE FROM kursant WHERE id = ?');
   stmt.run(id);
 }
 
-function searchKursants(query) {
+function searchKursants(query: string): Kursant[] {
   const stmt = db.prepare(`
     SELECT * FROM kursant
     WHERE fio LIKE ? OR iin LIKE ? OR phone LIKE ?
@@ -147,7 +165,7 @@ function searchKursants(query) {
   const wildcard = `%${query}%`;
   const rows = stmt.all(wildcard, wildcard, wildcard);
 
-  return rows.map(row => ({
+  return rows.map((row: any) => ({
     ...row,
     bookBought: Boolean(row.bookBought),
     materials: {
@@ -158,10 +176,37 @@ function searchKursants(query) {
     practice: {
       taken: Boolean(row.practiceTaken),
       count: Number(row.practiceCount),
-    }
+    },
   }));
+}
+
+async function saveKursantFiles(kursantId: number, key: string) {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Выберите файл',
+    properties: ['openFile'],
+  });
+
+  if (canceled || filePaths.length === 0) return;
+
+  const filePath = filePaths[0];
+  const destDir = path.join(process.cwd(), 'attachments', String(kursantId));
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+  const fileName = path.basename(filePath);
+  const destPath = path.join(destDir, fileName);
+  fs.copyFileSync(filePath, destPath);
+
+  // 1. Загружаем старое значение filePath из БД
+  const row = db.prepare('SELECT filePath FROM kursant WHERE id = ?').get(kursantId) as { filePath?: string };
+  const existing = row?.filePath ? JSON.parse(row.filePath) : {};
+
+  // 2. Обновляем нужное поле
+  const updated = { ...existing, [key]: destPath };
+  db.prepare('UPDATE kursant SET filePath = ? WHERE id = ?').run(JSON.stringify(updated), kursantId);
+
+  return destPath;
 }
 
 
 
-export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants};
+export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles };

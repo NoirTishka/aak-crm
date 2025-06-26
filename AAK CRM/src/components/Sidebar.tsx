@@ -1,7 +1,7 @@
 import { AddKursantForm } from './AddKursantForm';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import type { Kursant } from '../types/kursant';
+import type { Kursant } from '../electron/types/kursant';
 import { useKursantContext } from '../context/KursantContext';
 
 export function SideBar() {
