@@ -2,7 +2,6 @@ import ConfirmModal from "./ConfirmModal";
 import { useState } from "react";
 import { useKursantContext } from '../context/KursantContext';
 import AddKursantForm from "./AddKursantForm";
-import { FileViewer } from "./FileViewer";
 
 
 export function KursantDetails() {
@@ -12,26 +11,20 @@ export function KursantDetails() {
     loadKursants,
   } = useKursantContext();
 
-  const reversedFilePaths = 
-  selected?.filePaths
-    ? Object.entries(selected.filePaths).reduce((acc, [path, key]) => {
-        if (key) acc[key] = path;
-        return acc;
-      }, {} as Record<string, string>)
-    : {};
   const today = new Date().toLocaleDateString('ru-RU');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-return (    
-    <div className="basis-2/3 h-screen p-8 bg-green-50 overflow-hidden">
+
+  return (    
+    <div className="w-full h-full">
         {!selected ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
-            <div className="text-3xl mb-2">Выберите курсанта</div>
-            <div>Выберите курсанта из списка, чтобы увидеть подробную информацию</div>
+            <div className="w-full h-full bg-white rounded-2xl shadow-lg p-6 overflow-y-auto">
+                <div className="text-3xl mb-2">Выберите курсанта</div>
+                  <div>Выберите курсанта из списка, чтобы увидеть подробную информацию</div>
             </div>
         ) : (
-            <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col gap-4 max-w-2xl mx-auto">
+            <div className="w-full h-full bg-white rounded-2xl shadow-lg p-6 overflow-y-auto">
             {/* Верх: фото + ФИО */}
             <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded bg-gray-200 flex items-center justify-center text-2xl text-gray-500 font-bold">
@@ -64,13 +57,13 @@ return (
             <div className="flex justify-end gap-3 mt-4">
                 <button
                 onClick={() => setEditModalOpen(true)}
-                className="!bg-blue-600 hover:!bg-blue-700 text-white px-4 py-1 !rounded-xl flex items-center gap-2"
+                className="!bg-[#0066ff] hover:!bg-[#0052cc] text-white px-4 py-1 !rounded-xl flex items-center gap-2"
                 >
                 ✏️ Редактировать
                 </button>
                 <button
                 onClick={() => setConfirmDeleteOpen(true)}
-                className="!bg-red-600 hover:!bg-red-700 text-white px-4 py-1 !rounded-xl flex items-center gap-2"
+                className="!bg-[#ff3b3b] hover:!bg-[#cc2e2e] text-white px-4 py-1 !rounded-xl flex items-center gap-2"
                 >
                 🗑️ Удалить
                 </button>
@@ -106,11 +99,8 @@ return (
                 onCancel={() => setConfirmDeleteOpen(false)}
                 />
             )}
-        
             </div>
         )}
-        {selected?.filePaths && <FileViewer filePaths={reversedFilePaths} />}
-    
     </div>
-);
+  );
 }

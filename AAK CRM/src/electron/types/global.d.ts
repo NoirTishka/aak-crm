@@ -12,6 +12,7 @@ declare global {
       addKursant: (kursant: Kursant) => Promise<number>;
       saveFileDialog: (kursantId: number) => Promise<string>;
       saveKursantFile: (kursantId: number, key: string) => Promise<string | undefined>;
+      deleteKursantFile: (kursantId: number, key: string) => Promise<{ success: boolean }>;
       pickLocalFile: () => Promise<File | null>;
       readFile: (path: string) => Promise<Uint8Array>;
       minimize: () => void;

@@ -24,5 +24,6 @@ export type Kursant = {
   avtomektep_start: string;
 };
 
-
 export type KursantInput = Omit<Kursant, 'id' | 'registered_at'>;
+
+export type FileKey = "idCard" | "payment";

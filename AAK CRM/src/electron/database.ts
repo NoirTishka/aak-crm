@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import Database from 'better-sqlite3';
-import type { Kursant } from './types/kursant';
+import type { Kursant, FileKey } from './types/kursant';
 import { dialog } from 'electron';
 
 const dbPath = path.join(process.cwd(), 'aakcrm.db');
@@ -180,7 +180,7 @@ function searchKursants(query: string): Kursant[] {
   }));
 }
 
-async function saveKursantFiles(kursantId: number, key: string) {
+async function saveKursantFiles(kursantId: number, key: FileKey) {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'Выберите файл',
     properties: ['openFile'],
@@ -196,17 +196,46 @@ async function saveKursantFiles(kursantId: number, key: string) {
   const destPath = path.join(destDir, fileName);
   fs.copyFileSync(filePath, destPath);
 
-  // 1. Загружаем старое значение filePath из БД
   const row = db.prepare('SELECT filePath FROM kursant WHERE id = ?').get(kursantId) as { filePath?: string };
   const existing = row?.filePath ? JSON.parse(row.filePath) : {};
 
-  // 2. Обновляем нужное поле
   const updated = { ...existing, [key]: destPath };
   db.prepare('UPDATE kursant SET filePath = ? WHERE id = ?').run(JSON.stringify(updated), kursantId);
+
+
 
   return destPath;
 }
 
+function deleteKursantFile(kursantId: number, key: FileKey): boolean {
+  try {
+    const row = db.prepare('SELECT filePath FROM kursant WHERE id = ?').get(kursantId) as { filePath?: string };
+    const stored = row?.filePath ? JSON.parse(row.filePath) : {};
+
+    const reversed: Record<FileKey, string> = Object.entries(stored).reduce((acc, [path, label]) => {
+      acc[label as FileKey] = path;
+      return acc;
+    }, {} as Record<FileKey, string>);
+
+    const targetPath = reversed[key];
 
 
-export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles };
+    if (!targetPath || typeof targetPath !== "string") {
+      return false;
+    }
+
+    const updatedOriginal = Object.fromEntries(
+      Object.entries(stored).filter(([label]) => label !== key)
+    );
+
+    db.prepare('UPDATE kursant SET filePath = ? WHERE id = ?').run(JSON.stringify(updatedOriginal), kursantId);
+
+    return true;
+  } catch (error) {
+    console.error('Ошибка при удалении файла курсантa:', error);
+    return false;
+  }
+}
+
+
+export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles, deleteKursantFile };

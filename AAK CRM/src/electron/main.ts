@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain,  dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles } from './database.js';
-import type { Kursant } from './types/kursant.js';
+import { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles, deleteKursantFile } from './database.js';
+import type { Kursant, FileKey } from './types/kursant.js';
 import * as fs from 'fs';
 
 let mainWindow: BrowserWindow;
@@ -50,8 +50,13 @@ function createWindow(): void {
     return await searchKursants(query);  
   });
 
-  ipcMain.handle('save-kursant-file', async (_event, id: number, key: string) => {
-    return await saveKursantFiles(id, key); // важно: функция должна принимать key!
+  ipcMain.handle('save-kursant-file', async (_event, id: number, key: FileKey) => {
+    return await saveKursantFiles(id, key);
+  });
+
+  ipcMain.handle('file:deleteKursantFile', (_event, kursantId: number, key: FileKey) => {
+    const success = deleteKursantFile(kursantId, key);
+    return { success };
   });
 
 

@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('api', {
   readFile: async (filePath: string): Promise<Uint8Array> => {
     return await fs.readFile(filePath);
   },
+  deleteKursantFile: (kursantId: number, key: string): Promise<{ success: boolean }> =>
+  ipcRenderer.invoke('file:deleteKursantFile', kursantId, key),
   minimize: (): void => ipcRenderer.send('window:minimize'),
   maximize: (): void => ipcRenderer.send('window:maximize'),
   close: (): void => ipcRenderer.send('window:close'),

@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import { PDFViewer } from "./PDFViewer";
-import { Buffer } from "buffer";
+import type { FileKey } from "../electron/types/kursant";
 
 interface FileViewerProps {
-  filePaths: Record<string, string>;
+  filePaths: Partial<Record<FileKey, string>>;
+  onDeleteFile?: (key: FileKey) => Promise<boolean>;
 }
 
-export function FileViewer({ filePaths }: FileViewerProps) {
-  const [activeKey, setActiveKey] = useState<string | null>(
-    Object.keys(filePaths)[0] || null
-  );
+export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
+  const keys = Object.keys(filePaths) as FileKey[];
+  const [activeKey, setActiveKey] = useState<FileKey | null>(keys[0] ?? null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
-  const activePath = activeKey ? filePaths[activeKey] : null;
+  const activePath = activeKey ? filePaths[activeKey] ?? null : null;
 
   const getFileExtension = (filePath: string): string =>
     filePath.split(".").pop()?.toLowerCase() || "";
@@ -40,10 +40,11 @@ export function FileViewer({ filePaths }: FileViewerProps) {
     const loadFile = async () => {
       try {
         const buffer: Uint8Array = await window.api.readFile(activePath);
-        const base64 = Buffer.from(buffer).toString("base64");
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+        );
         const mime = getMimeType(activePath);
-        const dataUrl = `data:${mime};base64,${base64}`;
-        setDataUrl(dataUrl);
+        setDataUrl(`data:${mime};base64,${base64}`);
       } catch (err) {
         console.error("Ошибка при чтении файла:", err);
         setDataUrl(null);
@@ -55,23 +56,35 @@ export function FileViewer({ filePaths }: FileViewerProps) {
 
   const fileExt = activePath ? getFileExtension(activePath) : "";
 
+  const handleDelete = async (key: FileKey) => {
+    if (!confirm("Удалить этот документ?") || !onDeleteFile) return;
+
+    const success = await onDeleteFile(key);
+    if (success && activeKey === key) {
+      setActiveKey(null);
+      setDataUrl(null);
+    }
+  };
+
   return (
-    <div className="mt-4">
-      <div className="flex gap-2 mb-2">
-        {Object.entries(filePaths).map(([key, _]) => (
+    <div className="flex flex-col h-full">
+      {/* Кнопки переключения */}
+      <div className="flex gap-2 mb-4">
+        {keys.map((key) => (
           <button
             key={key}
             onClick={() => setActiveKey(key)}
-            className={`px-3 py-1 rounded ${
-              key === activeKey ? "!bg-blue-500 text-white" : "bg-gray-200"
+            className={`px-4 py-1 rounded ${
+              key === activeKey ? "!bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
-            {key === "payment" ? "Документ об оплате" : "Удостоверение"}
+            {key === "payment" ? "Чек об оплате" : "Удостоверение"}
           </button>
         ))}
       </div>
 
-      <div className="w-full border h-[600px] flex justify-center items-center bg-white">
+      {/* Просмотрщик */}
+      <div className="flex-grow overflow-auto flex items-center justify-center bg-gray-100 rounded">
         {dataUrl && fileExt === "pdf" && <PDFViewer fileData={dataUrl} />}
         {dataUrl && ["png", "jpg", "jpeg", "webp"].includes(fileExt) && (
           <img
@@ -84,6 +97,18 @@ export function FileViewer({ filePaths }: FileViewerProps) {
           <p className="text-gray-600">Невозможно отобразить данный тип файла</p>
         )}
       </div>
+
+      {/* Кнопка удаления */}
+      {activeKey && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => handleDelete(activeKey)}
+            className="px-4 py-2 !bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Удалить файл
+          </button>
+        </div>
+      )}
     </div>
   );
 }
