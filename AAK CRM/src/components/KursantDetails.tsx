@@ -19,9 +19,13 @@ export function KursantDetails() {
   return (    
     <div className="w-full h-full">
         {!selected ? (
-            <div className="w-full h-full bg-white rounded-2xl shadow-lg p-6 overflow-y-auto">
-                <div className="text-3xl mb-2">Выберите курсанта</div>
-                  <div>Выберите курсанта из списка, чтобы увидеть подробную информацию</div>
+            <div className="w-full h-full bg-white rounded-2xl shadow-lg p-6 overflow-y-auto flex justify-center items-center">
+                 <div className="flex flex-col items-center text-center">
+                    <div className="text-3xl mb-2">Выберите курсанта</div>
+                    <div className="text-gray-600 max-w-md">
+                    Выберите курсанта из списка, чтобы увидеть подробную информацию
+                    </div>
+                </div>
             </div>
         ) : (
             <div className="w-full h-full bg-white rounded-2xl shadow-lg p-6 overflow-y-auto">

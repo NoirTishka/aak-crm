@@ -112,9 +112,11 @@ return (
             <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50">
                 <AddKursantForm
                     onClose={() => setShowModal(false)}
-                    onAdded={async () => {
-                    setShowModal(false);
-                    await loadKursants();
+                    onAdded={async (newKursant) => {
+                        setShowModal(false);
+                        const updatedList = await loadKursants();
+                        const added = updatedList.find(k => k.id === newKursant.id);
+                        if (added) setSelected(added);
                     }}
                 />
             </div>

@@ -3,7 +3,7 @@ import type { Kursant } from "../electron/types/kursant";
 import { FileUploader } from "./FileUploader";
 
 type Props = {
-  onAdded?: () => void;
+  onAdded?: (newKursant: Kursant) => void;
   onUpdated?: () => void;
   onClose: () => void;
   initialData?: Kursant;
@@ -70,7 +70,9 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
     } else {
       const newKursantId = await window.api.addKursant(kursant);
       setKursantId(newKursantId);
-      onAdded?.();
+      
+      const newKursant = { ...kursant, id: newKursantId, filePaths: tempFiles };
+      onAdded?.(newKursant);
     }
   };
 

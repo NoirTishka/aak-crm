@@ -224,6 +224,11 @@ function deleteKursantFile(kursantId: number, key: FileKey): boolean {
       return false;
     }
 
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+
+
     const updatedOriginal = Object.fromEntries(
       Object.entries(stored).filter(([label]) => label !== key)
     );
