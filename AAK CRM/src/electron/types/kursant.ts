@@ -1,10 +1,12 @@
 export type Kursant = {
-  id?: number;
+  id: number;
   fio: string;
   iin: string;
   phone: string;
   category: string;
   payment: number;
+  registeredDate: string;
+  avtomektep_start: string;
   bookBought: boolean;
   bookGiven: "yes" | "no" | null;
   materials: {
@@ -17,13 +19,18 @@ export type Kursant = {
     count: number;
   };
   filePaths?: {
-    idCard?: string;
     payment?: string;
+    idCard?: string;
   };
-  registered_at: string;
-  avtomektep_start: string;
+  group: string;
+  access: {
+    video: { open: boolean; until?: string };
+    tests: { open: boolean; until?: string };
+    autodrome: { open: boolean; until?: string };
+  };
+  examPassed: boolean;
 };
 
-export type KursantInput = Omit<Kursant, 'id' | 'registered_at'>;
+export type KursantInput = Omit<Kursant, 'id'>;
 
 export type FileKey = "idCard" | "payment";

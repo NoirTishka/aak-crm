@@ -150,7 +150,7 @@ return (
                     <div className="font-semibold text-sm">{k.fio}</div>
                     <div className="text-xs text-gray-600">ИИН: {k.iin}</div>
                     <div className="text-xs text-gray-600">{k.phone}</div>
-                    <div className="text-xs text-gray-500">Записан: {k.registered_at}</div>
+                    <div className="text-xs text-gray-500">Записан: {k.registeredDate}</div>
                     <span className="mt-1 inline-block text-green-600 text-xs font-semibold">Активный</span>
                 </div>
                 ))}

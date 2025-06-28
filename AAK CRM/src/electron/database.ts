@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import Database from 'better-sqlite3';
-import type { Kursant, FileKey } from './types/kursant';
+import type { Kursant, FileKey, KursantInput } from './types/kursant';
 import { dialog } from 'electron';
 
 const dbPath = path.join(process.cwd(), 'aakcrm.db');
@@ -43,14 +43,19 @@ if (version === 0) {
     }
   }
 
-function addKursant(data: Kursant): number {
+function addKursant(data: KursantInput): number {
   const stmt = db.prepare(`
     INSERT INTO kursant (
       fio, iin, phone, category, registered_at, avtomektep_start,
       payment, bookBought, bookGiven,
       video, tests, autodrome,
-      practiceTaken, practiceCount
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      practiceTaken, practiceCount,
+      filePath,
+      "group", examPassed,
+      videoAccessOpen, videoAccessUntil,
+      testsAccessOpen, testsAccessUntil,
+      autodromeAccessOpen, autodromeAccessUntil
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
@@ -58,7 +63,7 @@ function addKursant(data: Kursant): number {
     data.iin,
     data.phone,
     data.category,
-    data.registered_at,
+    data.registeredDate,
     data.avtomektep_start,
     data.payment,
     data.bookBought ? 1 : 0,
@@ -67,11 +72,21 @@ function addKursant(data: Kursant): number {
     data.materials.tests ? 1 : 0,
     data.materials.autodrome ? 1 : 0,
     data.practice.taken ? 1 : 0,
-    data.practice.count
+    data.practice.count,
+    JSON.stringify(data.filePaths ?? {}),
+    data.group,
+    data.examPassed ? 1 : 0,
+    data.access.video.open ? 1 : 0,
+    data.access.video.until ?? null,
+    data.access.tests.open ? 1 : 0,
+    data.access.tests.until ?? null,
+    data.access.autodrome.open ? 1 : 0,
+    data.access.autodrome.until ?? null
   );
-  
+
   return Number(result.lastInsertRowid);
 }
+
 
 
 function getAllKursants(): Promise<Kursant[]> {
@@ -81,22 +96,28 @@ function getAllKursants(): Promise<Kursant[]> {
 
       const normalized = rows.map((row: any) => {
         const {
-          video,
-          tests,
-          autodrome,
-          practiceTaken,
-          practiceCount,
+          video, tests, autodrome,
+          practiceTaken, practiceCount,
           filePath,
+          videoAccessOpen, videoAccessUntil,
+          testsAccessOpen, testsAccessUntil,
+          autodromeAccessOpen, autodromeAccessUntil,
           ...rest
         } = row;
 
         return {
           ...rest,
           bookBought: Boolean(row.bookBought),
+          examPassed: Boolean(row.examPassed),
           materials: {
             video: Boolean(video),
             tests: Boolean(tests),
             autodrome: Boolean(autodrome),
+          },
+          access: {
+            video: { open: Boolean(videoAccessOpen), until: videoAccessUntil ?? undefined },
+            tests: { open: Boolean(testsAccessOpen), until: testsAccessUntil ?? undefined },
+            autodrome: { open: Boolean(autodromeAccessOpen), until: autodromeAccessUntil ?? undefined },
           },
           practice: {
             taken: Boolean(practiceTaken),
@@ -128,7 +149,15 @@ function updateKursant(data: Kursant): void {
       autodrome = ?,
       practiceTaken = ?,
       practiceCount = ?,
-      filePath = ?
+      filePath = ?,
+      "group" = ?,
+      examPassed = ?,
+      videoAccessOpen = ?,
+      videoAccessUntil = ?,
+      testsAccessOpen = ?,
+      testsAccessUntil = ?,
+      autodromeAccessOpen = ?,
+      autodromeAccessUntil = ?
     WHERE id = ?
   `);
 
@@ -146,9 +175,18 @@ function updateKursant(data: Kursant): void {
     data.practice.taken ? 1 : 0,
     data.practice.count,
     JSON.stringify(data.filePaths ?? {}),
+    data.group,
+    data.examPassed ? 1 : 0,
+    data.access.video.open ? 1 : 0,
+    data.access.video.until ?? null,
+    data.access.tests.open ? 1 : 0,
+    data.access.tests.until ?? null,
+    data.access.autodrome.open ? 1 : 0,
+    data.access.autodrome.until ?? null,
     data.id
   );
 }
+
 
 
 function deleteKursant(id: number): void {

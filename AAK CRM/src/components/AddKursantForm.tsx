@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { Kursant } from "../electron/types/kursant";
+import type { Kursant, KursantInput } from "../electron/types/kursant";
 import { FileUploader } from "./FileUploader";
 
 type Props = {
@@ -25,18 +25,18 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
   const [practiceCount, setPracticeCount] = useState(initialData?.practice?.count?.toString() || "");
   const [category, setCategory] = useState(initialData?.category || "");
   const [_kursantId, setKursantId] = useState<number | null>(null);
-  const [tempFiles, setTempFiles] = useState<{
-    payment?: string;
-    idCard?: string;
-  }>({});
-  
-   useEffect(() => {
-      console.log('📌 useEffect triggered — editMode:', editMode, 'initialData.id:', initialData?.id);
-      if (editMode && initialData?.id !== undefined) {
-        setKursantId(initialData.id);
-      }
-    }, [editMode, initialData]);
+  const [tempFiles, setTempFiles] = useState<{ payment?: string; idCard?: string }>({});
+  const [group, setGroup] = useState(initialData?.group || "");
+  const [examPassed, setExamPassed] = useState(initialData?.examPassed || false);
+  const [videoAccessEnd, setVideoAccessEnd] = useState<string | null>(initialData?.access?.video?.until || null);
+  const [testsAccessEnd, setTestsAccessEnd] = useState<string | null>(initialData?.access?.tests?.until || null);
+  const [autodromeAccessEnd, setAutodromeAccessEnd] = useState<string | null>(initialData?.access?.autodrome?.until || null);
 
+  useEffect(() => {
+    if (editMode && initialData?.id !== undefined) {
+      setKursantId(initialData.id);
+    }
+  }, [editMode, initialData]);
 
   const iinRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -47,14 +47,14 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
     e.preventDefault();
     const today = new Date().toISOString().split("T")[0];
 
-    const kursant: Omit<Kursant, "id"> = {
+    const kursant: KursantInput = {
       fio,
       iin,
       phone,
       category,
       payment: Number(payment),
-      registered_at: initialData?.registered_at || today,
-      avtomektep_start: initialData?.avtomektep_start || today,
+      registeredDate: initialData?.registeredDate || today,
+      avtomektep_start: editMode ? initialData?.avtomektep_start || today : today,
       bookBought,
       bookGiven,
       materials: { video, tests, autodrome },
@@ -62,6 +62,22 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
         taken: practiceTaken,
         count: Number(practiceCount),
       },
+      group,
+      access: {
+        video: {
+          open: !!videoAccessEnd,
+          until: videoAccessEnd || undefined,
+        },
+        tests: {
+          open: !!testsAccessEnd,
+          until: testsAccessEnd || undefined,
+        },
+        autodrome: {
+          open: !!autodromeAccessEnd,
+          until: autodromeAccessEnd || undefined,
+        },
+      },
+      examPassed,
     };
 
     if (editMode && initialData) {
@@ -70,7 +86,7 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
     } else {
       const newKursantId = await window.api.addKursant(kursant);
       setKursantId(newKursantId);
-      
+
       const newKursant = { ...kursant, id: newKursantId, filePaths: tempFiles };
       onAdded?.(newKursant);
     }
@@ -103,20 +119,18 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
           kursantId={_kursantId}
           onFileSelected={(fileKey, path) => {
             const newFiles = { ...tempFiles, [fileKey]: path };
-              setTempFiles(newFiles);
-                if (selected) {
-                  setSelected({
-                    ...selected,
-                    filePaths: {
-                      ...(selected.filePaths || {}),
-                      [fileKey]: path,
-                    },
-                  });
-                }
-              }}
+            setTempFiles(newFiles);
+            if (selected) {
+              setSelected({
+                ...selected,
+                filePaths: {
+                  ...(selected.filePaths || {}),
+                  [fileKey]: path,
+                },
+              });
+            }
+          }}
         />
-
-
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Телефон</label>
@@ -147,19 +161,18 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
           kursantId={_kursantId}
           onFileSelected={(fileKey, path) => {
             const newFiles = { ...tempFiles, [fileKey]: path };
-              setTempFiles(newFiles);
-                if (selected) {
-                  setSelected({
-                    ...selected,
-                    filePaths: {
-                      ...(selected.filePaths || {}),
-                      [fileKey]: path,
-                    },
-                  });
-                }
-              }}
+            setTempFiles(newFiles);
+            if (selected) {
+              setSelected({
+                ...selected,
+                filePaths: {
+                  ...(selected.filePaths || {}),
+                  [fileKey]: path,
+                },
+              });
+            }
+          }}
         />
-
 
         <label className="inline-flex items-center gap-2">
           <input type="checkbox" checked={bookBought} onChange={e => setBookBought(e.target.checked)} /> Купил книгу?
@@ -196,7 +209,6 @@ export function AddKursantForm({ onAdded, onUpdated, onClose, initialData, editM
           {editMode ? 'Редактировать' : 'Добавить'}
         </button>
       </div>
-
     </form>
   );
 };
