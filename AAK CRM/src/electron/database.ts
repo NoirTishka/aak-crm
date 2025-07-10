@@ -1,19 +1,19 @@
-import path from 'path';
-import fs from 'fs';
-import Database from 'better-sqlite3';
-import type { Kursant, FileKey, KursantInput } from './types/kursant';
-import { dialog } from 'electron';
+import path from "path";
+import fs from "fs";
+import Database from "better-sqlite3";
+import type { Kursant, FileKey, KursantInput } from "./types/kursant";
+import { dialog } from "electron";
+import { app } from "electron";
 
-const dbPath = path.join(process.cwd(), 'aakcrm.db');
+const dbPath = path.join(process.cwd(), "aakcrm.db");
 const db = new Database(dbPath);
 migrate();
 
 function migrate() {
+  let version = db.pragma("user_version", { simple: true });
 
-let version = db.pragma('user_version', { simple: true });
-
-if (version === 0) {
-  db.exec(`
+  if (version === 0) {
+    db.exec(`
     CREATE TABLE kursant (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       fio TEXT NOT NULL,
@@ -32,16 +32,16 @@ if (version === 0) {
       practiceCount INTEGER NOT NULL
     );
   `);
-  db.pragma('user_version = 1');
-  version = 1;
-}
+    db.pragma("user_version = 1");
+    version = 1;
+  }
 
   if (version === 1) {
-      db.exec(`ALTER TABLE kursant ADD COLUMN filePath TEXT;`);
-      db.pragma('user_version = 2');
-      version = 2;
-    }
+    db.exec(`ALTER TABLE kursant ADD COLUMN filePath TEXT;`);
+    db.pragma("user_version = 2");
+    version = 2;
   }
+}
 
 function addKursant(data: KursantInput): number {
   const stmt = db.prepare(`
@@ -87,21 +87,25 @@ function addKursant(data: KursantInput): number {
   return Number(result.lastInsertRowid);
 }
 
-
-
 function getAllKursants(): Promise<Kursant[]> {
   return new Promise((resolve, reject) => {
     try {
-      const rows = db.prepare('SELECT * FROM kursant').all();
+      const rows = db.prepare("SELECT * FROM kursant").all();
 
       const normalized = rows.map((row: any) => {
         const {
-          video, tests, autodrome,
-          practiceTaken, practiceCount,
+          video,
+          tests,
+          autodrome,
+          practiceTaken,
+          practiceCount,
           filePath,
-          videoAccessOpen, videoAccessUntil,
-          testsAccessOpen, testsAccessUntil,
-          autodromeAccessOpen, autodromeAccessUntil,
+          videoAccessOpen,
+          videoAccessUntil,
+          testsAccessOpen,
+          testsAccessUntil,
+          autodromeAccessOpen,
+          autodromeAccessUntil,
           ...rest
         } = row;
 
@@ -115,9 +119,18 @@ function getAllKursants(): Promise<Kursant[]> {
             autodrome: Boolean(autodrome),
           },
           access: {
-            video: { open: Boolean(videoAccessOpen), until: videoAccessUntil ?? undefined },
-            tests: { open: Boolean(testsAccessOpen), until: testsAccessUntil ?? undefined },
-            autodrome: { open: Boolean(autodromeAccessOpen), until: autodromeAccessUntil ?? undefined },
+            video: {
+              open: Boolean(videoAccessOpen),
+              until: videoAccessUntil ?? undefined,
+            },
+            tests: {
+              open: Boolean(testsAccessOpen),
+              until: testsAccessUntil ?? undefined,
+            },
+            autodrome: {
+              open: Boolean(autodromeAccessOpen),
+              until: autodromeAccessUntil ?? undefined,
+            },
           },
           practice: {
             taken: Boolean(practiceTaken),
@@ -187,10 +200,8 @@ function updateKursant(data: Kursant): void {
   );
 }
 
-
-
 function deleteKursant(id: number): void {
-  const stmt = db.prepare('DELETE FROM kursant WHERE id = ?');
+  const stmt = db.prepare("DELETE FROM kursant WHERE id = ?");
   stmt.run(id);
 }
 
@@ -220,65 +231,74 @@ function searchKursants(query: string): Kursant[] {
 
 async function saveKursantFiles(kursantId: number, key: FileKey) {
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    title: 'Выберите файл',
-    properties: ['openFile'],
+    title: "Выберите файл",
+    properties: ["openFile"],
   });
 
   if (canceled || filePaths.length === 0) return;
 
   const filePath = filePaths[0];
-  const destDir = path.join(process.cwd(), 'attachments', String(kursantId));
+
+  const baseDir = app.getPath("userData");
+  const destDir = path.join(baseDir, "attachments", String(kursantId));
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
 
   const fileName = path.basename(filePath);
   const destPath = path.join(destDir, fileName);
   fs.copyFileSync(filePath, destPath);
 
-  const row = db.prepare('SELECT filePath FROM kursant WHERE id = ?').get(kursantId) as { filePath?: string };
+  const relativePath = path.relative(baseDir, destPath);
+
+  const row = db
+    .prepare("SELECT filePath FROM kursant WHERE id = ?")
+    .get(kursantId) as { filePath?: string };
   const existing = row?.filePath ? JSON.parse(row.filePath) : {};
 
-  const updated = { ...existing, [key]: destPath };
-  db.prepare('UPDATE kursant SET filePath = ? WHERE id = ?').run(JSON.stringify(updated), kursantId);
+  const updated = { ...existing, [key]: relativePath };
+  db.prepare("UPDATE kursant SET filePath = ? WHERE id = ?").run(
+    JSON.stringify(updated),
+    kursantId
+  );
 
-
-
-  return destPath;
+  return relativePath;
 }
 
 function deleteKursantFile(kursantId: number, key: FileKey): boolean {
   try {
-    const row = db.prepare('SELECT filePath FROM kursant WHERE id = ?').get(kursantId) as { filePath?: string };
+    const row = db
+      .prepare("SELECT filePath FROM kursant WHERE id = ?")
+      .get(kursantId) as { filePath?: string };
     const stored = row?.filePath ? JSON.parse(row.filePath) : {};
 
-    const reversed: Record<FileKey, string> = Object.entries(stored).reduce((acc, [path, label]) => {
-      acc[label as FileKey] = path;
-      return acc;
-    }, {} as Record<FileKey, string>);
+    const pathToDelete = stored[key];
+    if (!pathToDelete) return false;
 
-    const targetPath = reversed[key];
-
-
-    if (!targetPath || typeof targetPath !== "string") {
-      return false;
+    const absolutePath = path.join(app.getPath("userData"), pathToDelete);
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
     }
 
-    if (fs.existsSync(targetPath)) {
-      fs.unlinkSync(targetPath);
-    }
+    const updated = { ...stored };
+    delete updated[key];
 
-
-    const updatedOriginal = Object.fromEntries(
-      Object.entries(stored).filter(([label]) => label !== key)
+    db.prepare("UPDATE kursant SET filePath = ? WHERE id = ?").run(
+      JSON.stringify(updated),
+      kursantId
     );
-
-    db.prepare('UPDATE kursant SET filePath = ? WHERE id = ?').run(JSON.stringify(updatedOriginal), kursantId);
 
     return true;
   } catch (error) {
-    console.error('Ошибка при удалении файла курсантa:', error);
+    console.error("Ошибка при удалении файла курсантa:", error);
     return false;
   }
 }
 
-
-export { getAllKursants, addKursant, updateKursant, deleteKursant, searchKursants, saveKursantFiles, deleteKursantFile };
+export {
+  getAllKursants,
+  addKursant,
+  updateKursant,
+  deleteKursant,
+  searchKursants,
+  saveKursantFiles,
+  deleteKursantFile,
+};

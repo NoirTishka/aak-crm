@@ -24,8 +24,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-    "include": [
-    "src",
-    "src/electron/types"
-  ]
+  "include": ["src", "src/electron/types"]
 }

@@ -41,12 +41,13 @@ export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
   useEffect(() => {
     if (!activePath) return;
 
-    let objectUrl: string;
+    let objectUrl: string | undefined;
 
     const loadFile = async () => {
       try {
         setIsLoading(true);
-        const buffer: Uint8Array = await window.api.readFile(activePath);
+        const fullPath = window.api.getFullPath(activePath);
+        const buffer: Uint8Array = await window.api.readFile(fullPath);
         const mime = getMimeType(activePath);
         const blob = new Blob([buffer], { type: mime });
         objectUrl = URL.createObjectURL(blob);
@@ -55,15 +56,14 @@ export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
         console.error("Ошибка при чтении файла:", err);
         setDataUrl(null);
       } finally {
-      setIsLoading(false);
-    }
-      
+        setIsLoading(false);
+      }
     };
 
     loadFile();
 
     return () => {
-      if (dataUrl) URL.revokeObjectURL(dataUrl);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [activePath]);
 
@@ -75,6 +75,10 @@ export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
     const success = await onDeleteFile(key);
     if (success && activeKey === key) {
       setActiveKey(null);
+      console.log("Loaded file:", {
+        path: activePath,
+      });
+
       setDataUrl(null);
     }
   };
@@ -100,9 +104,25 @@ export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
       <div className="flex-grow overflow-auto flex items-center justify-center bg-gray-100 rounded">
         {isLoading ? (
           <div className="flex items-center gap-2 text-blue-500">
-            <svg className="!animate-spin h-6 w-6 !text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="!animate-spin h-6 w-6 !text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
             Загрузка...
           </div>
@@ -110,10 +130,16 @@ export function FileViewer({ filePaths, onDeleteFile }: FileViewerProps) {
           <>
             {dataUrl && fileExt === "pdf" && <PDFViewer fileData={dataUrl} />}
             {dataUrl && ["png", "jpg", "jpeg", "webp"].includes(fileExt) && (
-              <img src={dataUrl} alt="Документ" className="max-h-full max-w-full object-contain" />
+              <img
+                src={dataUrl}
+                alt="Документ"
+                className="max-h-full max-w-full object-contain"
+              />
             )}
             {!dataUrl && (
-              <p className="text-gray-600">Невозможно отобразить данный тип файла</p>
+              <p className="text-gray-600">
+                Невозможно отобразить данный тип файла
+              </p>
             )}
           </>
         )}

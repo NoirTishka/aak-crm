@@ -4,7 +4,7 @@ import type { Kursant } from "../electron/types/kursant";
 type KursantContextType = {
   selected: Kursant | null;
   setSelected: (kursant: Kursant | null) => void;
- loadKursants: () => Promise<Kursant[]>;
+  loadKursants: () => Promise<Kursant[]>;
   kursants: Kursant[];
   setKursants: (kursants: Kursant[]) => void;
   selectedFilePath: string | null;
@@ -18,7 +18,6 @@ export function KursantProvider({ children }: { children: React.ReactNode }) {
   const [kursants, setKursants] = useState<Kursant[]>([]);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 
-
   const loadKursants = async () => {
     const list = await window.api.getAllKursants();
     setKursants(list);
@@ -27,7 +26,15 @@ export function KursantProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <KursantContext.Provider
-      value={{ selected, setSelected, kursants, setKursants, loadKursants, selectedFilePath, setSelectedFilePath }}
+      value={{
+        selected,
+        setSelected,
+        kursants,
+        setKursants,
+        loadKursants,
+        selectedFilePath,
+        setSelectedFilePath,
+      }}
     >
       {children}
     </KursantContext.Provider>
